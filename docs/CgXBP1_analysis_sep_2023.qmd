@@ -1,0 +1,219 @@
+---
+title: "CgXBP1_analysis"
+format: html
+editor: visual
+---
+
+```{r setup, message=FALSE}
+
+library(magrittr)
+source("chip_analysis_functions.R")
+library(EnrichedHeatmap)
+library(ggplot2)
+```
+
+## PolII profile plot
+
+```{r profile-hearmap-wt, message=FALSE, warning=FALSE, cache=TRUE}
+
+
+gff_file <- "../../../../1_genome/CBS138_s02-m07-r06/annotation/C_glabrata_CBS138_version_s02-m07-r06_features.gff"
+gff <- GenomicFeatures::makeTxDbFromGFF(gff_file, metadata = T)
+genes <- GenomicFeatures::genes(gff)
+
+## prepare signal data
+
+#bw_files_dir <- c("../../../2_fastq_and_alignment/xbp1_deletion/180518_D00691_0103_BCCHBVANXX/")
+
+bw_files_dir <- c("../../../../2_fastq_and_alignment/WT/2_new_analysis/2_alignment/THP1/set1/")
+
+# bw_files_dir <- c("../../../2_fastq_and_alignment/WT/2_new_analysis/2_alignment/THP1/set2_normalised_bw/reseq/")
+
+bw_files <- list.files(bw_files_dir, pattern = "*set1.*bw", recursive = T, full.names = T)
+
+names(bw_files) <- c("0.5h", "2h", "4h", "6h", "8h")
+bw_files <- tibble::enframe(bw_files)
+
+## generate normalised matrix in tidy way
+xx <- bw_files %>%
+        dplyr::mutate(bw = purrr::map(value, function(ii) {
+                rtracklayer::import(ii)
+        })) %>%
+        dplyr::mutate(norm_matrix = purrr::map(bw, function(ii) {
+                nn <- EnrichedHeatmap::normalizeToMatrix(signal = ii, target = genes, value_column = "score", smooth = T, extend = 200)
+                return(nn)
+        }))
+
+## plot hm list
+hh <- get_enrichment_heatmap_list(
+        x = xx$norm_matrix,
+        col = circlize::colorRamp2(breaks = seq(0, 50, by = 10), colors = c("white", "#fdd49e", "#fdbb84", "#fc8d59", "#e34a33", "#b30000")),
+        names = xx$name,
+        titles = xx$name,
+        axis_name = c("-200", "TSS", "TES", "+200"),
+        axis_name_rot = 90 ,
+        axis_name_gp = gpar(fontsize = 10, fontface = "bold"),
+        pos_line = T,
+        top_annotation = HeatmapAnnotation(lines = anno_enriched(axis_param = list(side = "right", facing = "inside")))
+)
+
+ComplexHeatmap::draw(hh)
+
+
+
+
+```
+
+## Heatmap of temporal expression patterns of transcribed genes in *C. glabrata*
+
+```{r prepare-data}
+
+# load FPKM matrix 
+
+load("cg_polII_wt_thp1_sample_wise_fpkm_mat.RData") ## WT data
+
+cg_wt_tidy <- sample_wise_fpkm_mat_final
+rm(sample_wise_fpkm_mat_final)
+
+cg_wt_tidy <- cg_wt_tidy %>%
+        dplyr::rename_if(is.numeric, ~gsub(pattern = "set_1", replacement = "set1", x = .)) %>% ## rename columns : set_1 to set1
+        tidyr::gather("Cond", "FPKM", -geneName) %>%
+        tidyr::separate(col = "Cond", sep = "_", into = c("organism", "strain", "condition", "timepoint", "moleculeType", "replicate"))
+
+
+
+load("cg_polII_xbp1_thp1_sample_wise_fpkm_mat.RData") ## xbp1 del data
+
+cg_xbp1_tidy <- sample_wise_fpkm_mat_final
+cg_xbp1_tidy <- cg_xbp1_tidy %>%
+        tidyr::gather("Cond", "FPKM", -geneName) %>%
+        tidyr::separate(col = "Cond", sep = "_", into = c("organism", "strain", "condition", "timepoint", "moleculeType", "replicate"))
+
+
+## combine datasets
+cg_polII_data <- dplyr::bind_rows(cg_wt_tidy, cg_xbp1_tidy) %>%
+        dplyr::group_by(geneName, strain, condition, replicate) %>%
+        dplyr::mutate(stdev = sd(FPKM)) ## calculate sd within group across all timepoints . Make sure that number of elem in each group must be equal to time points.
+
+dplyr::bind_rows(cg_wt_tidy, cg_xbp1_tidy) %>% dplyr::group_by(geneName, strain, condition, replicate) %>% 
+        dplyr::tally() %>% 
+        dplyr::arrange(desc(n))
+
+
+## cross check the numbers (e.g number of unique genes, organism , strain, conditions etc.)
+cg_polII_data %>% dplyr::ungroup() %>% dplyr::summarise_all(dplyr::n_distinct)
+
+
+```
+
+## plot SD distributions for strain types for each replicates.
+
+```{r sd-histograms}
+
+
+gp <- cg_polII_data %>%
+        dplyr::slice(1L) %>% ## get one elem of each group
+        ggplot() + geom_histogram(aes(x = stdev), binwidth = 1, fill = "cyan3", col = "black") + xlim(-1, 50) + facet_wrap(replicate ~ strain) + theme_bw()
+
+gp
+
+
+```
+
+## Count number of genes at several standard deviation cutoffs (WT)
+
+```{r count-genes-by-sd-wt, fig.width=5, fig.height=5}
+
+gp <- counts_by_sd_cutoffs(
+        x = cg_wt_tidy %>%
+                tidyr::spread(timepoint, FPKM) %>%
+                dplyr::filter(replicate == "set1") %>%
+                dplyr::select_if(is.double),
+        y = paste(c(0, 2, 4, 6, 8), "h", sep = ""),
+        sds_cutoffs = seq(1, 10, by = 0.5)
+)
+
+gp + theme_bw()
+```
+
+## Wild Type Z-score heatmap plot
+
+```{r zscore-wt-heatmap, fig.width=4, fig.height=8}
+
+## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+####  zscore heatmap plot
+## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+sd_cut_off <- 2.25
+strain_type <- "wt"
+rep <- "set1"
+
+fpkm_mat <- cg_polII_data %>%
+        dplyr::ungroup() %>%
+        dplyr::filter(stdev >= sd_cut_off, replicate == rep) %>%
+        #dplyr::filter(strain == strain_type, stdev >= sd_cut_off, replicate == rep) %>%
+        dplyr::select(geneName, strain, timepoint, FPKM) %>%
+        tidyr::unite(col = "ident", sep = "_", strain, timepoint, remove = F) %>%
+        dplyr::select(-timepoint) %>%
+        dplyr::group_by(geneName)
+
+zscore_mats <- fpkm_mat  %>%
+        dplyr::group_by( strain, geneName) %>% 
+        dplyr::mutate(zscore = scale(FPKM)) %>% 
+        dplyr::select(-FPKM) %>% 
+        tidyr::spread(key = ident, value = zscore) %>%
+        dplyr::group_by(strain) %>% 
+        dplyr::group_split() %>%
+        purrr::map(~ ..1 %>% dplyr::select(-strain) %>% TidyWrappers::tbl_remove_vars_NA_any())
+
+
+# plot WT heatmap
+hm_data <- zscore_mats[[1]] %>%
+        as.data.frame() %>% 
+        tibble::column_to_rownames("geneName")
+
+
+seed <- 7173
+set.seed(seed)
+km <- kmeans(hm_data, centers = 8)
+table(km$cluster)
+cl_order <- factor(km$cluster, levels = c(3,2,1,6,4,7,8,5)) %>% 
+        forcats::fct_relabel(~paste("clust",1:8, sep = "-"))
+
+cg_wt_heatmap = ComplexHeatmap::Heatmap(hm_data, show_row_dend = F, 
+                        show_row_names = F, 
+                        cluster_columns = F, 
+                        show_column_dend = F, 
+                        row_split = cl_order, 
+                        name = "Z-Score",
+                        cluster_row_slices = F)
+cg_wt_heatmap
+```
+
+## Xbp1∆ Z-score heatmap plot
+
+```{r zscore-xbp1-heatmap, fig.height=6, fig.width=4}
+
+hm_data <- zscore_mats[[2]] %>%
+        as.data.frame() %>% 
+        tibble::column_to_rownames("geneName")
+
+
+seed <- 7173
+set.seed(seed)
+km <- kmeans(hm_data, centers = 7)
+table(km$cluster)
+cl_order <- factor(km$cluster, levels = c(4,6,1,5,3,2,7)) %>% 
+        forcats::fct_relabel(~paste("clust",1:7, sep = "-"))
+
+cg_xbp1_heatmap = ComplexHeatmap::Heatmap(hm_data, show_row_dend = F, 
+                        show_row_names = F, 
+                        cluster_columns = F, 
+                        show_column_dend = F, 
+                        row_split = cl_order, 
+                        name = "Z-Score",
+                        cluster_row_slices = F)
+
+cg_xbp1_heatmap
+
+```
