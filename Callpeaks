@@ -1,0 +1,17 @@
+#!/bin/bash
+
+#SBATCH -J STAR_align
+#SBATCH -t 24:00:00
+#SBATCH -N 1
+#SBATCH --ntasks-per-node 1
+#SBATCH --cpus-per-task 6
+#SBATCH --mem-per-cpu 8G
+#SBATCH --output=%x-%j.out
+#SBATCH --error=%x-%j.err
+
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+cd /rfs-storageservice/GIS/Projects/LPOCE/Niranjan/20230215_Nandan/9_usingBAM_XBPMyc2andTHP1_2_OLDINPUT_separate
+
+macs2 callpeak -t XBPMyc2_THP1_2h_CL1019Mix_GTTGTCCCA_bt2.bam -c XBPMyc1_Day4_Input_CGGACGTGG_CL1019Mix_bt2.bam -f BAM -g 1.3e+07 --nomodel --outdir XBPMyc2_Macs2_output
+macs2 callpeak -t THP1_2.bt2.bam -c XBPMyc1_Day4_Input_CGGACGTGG_CL1019Mix_bt2.bam -f BAM -g 1.3e+07 --nomodel --outdir THP1_2_Macs2_output
