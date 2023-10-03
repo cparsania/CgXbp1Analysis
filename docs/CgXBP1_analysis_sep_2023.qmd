@@ -10,6 +10,7 @@ library(magrittr)
 source("../R/chip_analysis_functions.R")
 library(EnrichedHeatmap)
 library(ggplot2)
+library(patchwork)
 ```
 
 ## PolII profile heatmap (WT)
@@ -101,6 +102,48 @@ dplyr::bind_rows(wt_fpkm_mat, xbp1_fpkm_mat) %>% dplyr::group_by(gene_name, stra
 cg_polII_data %>% dplyr::ungroup() %>% dplyr::summarise_all(dplyr::n_distinct)
 
 
+```
+
+## Corr between PolII replicates using FPKM values
+
+```{r, fig.width=8, fig.height=12}
+
+# WT
+
+wt_data_for_corr <- cg_polII_data %>% dplyr::filter(strain == "wt") %>% 
+  tidyr::pivot_wider(id_cols  = c(gene_name, timepoint), 
+                     names_from = replicate, 
+                     values_from = FPKM) 
+
+
+plot_wt_cor <- wt_data_for_corr %>% 
+  dplyr::mutate(set1 = log2(set1+1),set2 = log2(set2+1)) %>% 
+  ggpubr::ggscatter(x = "set1",y = "set2", facet.by = "timepoint", cor.coef = T ,cor.coeff.args = list(col = "red"), nrow = 2 ) + 
+  ggtitle("WT") + 
+  scale_y_continuous(breaks = c(0,5,10)) + scale_x_continuous(breaks = c(0,5,10), limits = c(0,10))
+
+
+
+  
+
+
+# xbp1
+xbp1_data_for_corr <- cg_polII_data %>% dplyr::filter(strain == "xbp1") %>% 
+  tidyr::pivot_wider(id_cols  = c(gene_name, timepoint), 
+                     names_from = replicate, 
+                     values_from = FPKM) 
+
+
+plot_xbp1_cor <- xbp1_data_for_corr %>% 
+  dplyr::mutate(set1 = log2(set1+1),set2 = log2(set2+1)) %>% 
+  ggpubr::ggscatter(x = "set1",y = "set2", facet.by = "timepoint", cor.coef = T ,cor.coeff.args = list(col = "red"), nrow = 2 ) + ggtitle("xbp1∆")  +
+  scale_y_continuous(breaks = c(0,5,10)) + scale_x_continuous(breaks = c(0,5,10), limits = c(0,10))
+
+
+
+plot_wt_cor / plot_xbp1_cor
+
+  
 ```
 
 ## plot SD distributions for strain types for each replicates.
@@ -215,12 +258,126 @@ cg_xbp1_heatmap
 
 ```
 
-## Corr between PolII replicates using FPKM values 
+## Pathway specific heatmap
 
 ```{r}
+
+genes_by_processes <- tibble::tribble(
+                                      ~gene_name,                ~processes,
+                              "CAGL0A01045g",               "TCA Cycle",
+                              "CAGL0D06424g",               "TCA Cycle",
+                              "CAGL0E01287g",               "TCA Cycle",
+                              "CAGL0F02431g",               "TCA Cycle",
+                              "CAGL0G02673g",               "TCA Cycle",
+                              "CAGL0G08712g",               "TCA Cycle",
+                              "CAGL0H03993g",               "TCA Cycle",
+                              "CAGL0L06798g",               "TCA Cycle",
+                              "CAGL0A00363g", "Amino Acid Biosynthesis",
+                              "CAGL0A02574g", "Amino Acid Biosynthesis",
+                              "CAGL0C01243g", "Amino Acid Biosynthesis",
+                              "CAGL0D04356g", "Amino Acid Biosynthesis",
+                              "CAGL0F01749g", "Amino Acid Biosynthesis",
+                              "CAGL0F06875g", "Amino Acid Biosynthesis",
+                              "CAGL0G06732g", "Amino Acid Biosynthesis",
+                              "CAGL0J06402g", "Amino Acid Biosynthesis",
+                              "CAGL0E01243g",        "Iron Homeostasis",
+                              "CAGL0G06798g",        "Iron Homeostasis",
+                              "CAGL0H03487g",        "Iron Homeostasis",
+                              "CAGL0J05060g",        "Iron Homeostasis",
+                              "CAGL0L11990g",        "Iron Homeostasis",
+                              "CAGL0M08910g",        "Iron Homeostasis",
+                              "CAGL0L09251g",         "Stress Response",
+                              "CAGL0G10175g",         "Stress Response",
+                              "CAGL0G01540g",         "Stress Response",
+                              "CAGL0L05412g",         "Stress Response"
+                              )
+
+id_map <- tibble::tribble(
+                           ~gene_name,    ~gene_symbol,
+                  "CAGL0A01045g",   "CgFUM1",
+                  "CAGL0D06424g",   "CgACO1",
+                  "CAGL0E01287g",   "CgKGD2",
+                  "CAGL0F02431g",   "CgACO2",
+                  "CAGL0G02673g",   "CgIDH1",
+                  "CAGL0G08712g",   "CgKGD1",
+                  "CAGL0H03993g",   "CgCIT1",
+                  "CAGL0L06798g",   "CgMDH3",
+                  "CAGL0A00363g",    "CgLEU",
+                  "CAGL0A02574g",   "CgTRP4",
+                  "CAGL0C01243g",   "CgHIS5",
+                  "CAGL0D04356g",   "CgGCV1",
+                  "CAGL0F01749g",   "CgSHM2",
+                  "CAGL0F06875g",   "CgLYS1",
+                  "CAGL0G06732g",   "CgLEU9",
+                  "CAGL0J06402g",  "CgLYS20",
+                  "CAGL0L09251g",   "CgHAL1",
+                  "CAGL0G10175g",   "CgAWP6",
+                  "CAGL0G01540g", "CgNCE103",
+                  "CAGL0L05412g",   "CgASF1",
+                  "CAGL0E01243g",   "CgCTH2",
+                  "CAGL0G06798g",   "CgLSO1",
+                  "CAGL0H03487g",   "CgAFT1",
+                  "CAGL0J05060g",   "CgZAP1",
+                  "CAGL0L11990g",   "CgGRX4",
+                  "CAGL0M08910g",   "CgSNF1"
+                  )
+
+# WT TCA cycle 
+data_for_tca_heatmap_wt <- genes_by_processes %>% 
+  dplyr::left_join(id_map)  %>%
+  dplyr::left_join(zscore_mats[[1]]) %>%
+  dplyr::filter(processes == "TCA Cycle") %>%
+  dplyr::select(-c(processes,gene_name)) %>%
+  as.data.frame() %>%
+  tibble::column_to_rownames("gene_symbol")
+  
+  
+ComplexHeatmap::Heatmap(data_for_tca_heatmap_wt, cluster_columns = F, show_row_dend = F, name = "Z-score", cluster_rows = F)
+
+
+# XBP1 TCA cycle 
+
+data_for_tca_heatmap_xbp1 <- genes_by_processes %>% 
+  dplyr::left_join(id_map)  %>%
+  dplyr::left_join(zscore_mats[[2]]) %>%
+  dplyr::filter(processes == "TCA Cycle") %>%
+  dplyr::select(-c(processes,gene_name)) %>%
+  as.data.frame() %>%
+  tibble::column_to_rownames("gene_symbol")
+
+
+ComplexHeatmap::Heatmap(data_for_tca_heatmap_xbp1, cluster_columns = F, show_row_dend = F, name = "Z-score", cluster_rows = F)
+
+
+
+
+# WT Amino acid  
+data_for_aa_heatmap_wt <- genes_by_processes %>% 
+  dplyr::left_join(id_map)  %>%
+  dplyr::left_join(zscore_mats[[1]]) %>%
+  dplyr::filter(processes == "Amino Acid Biosynthesis") %>%
+  dplyr::select(-c(processes,gene_name)) %>%
+  as.data.frame() %>%
+  tibble::column_to_rownames("gene_symbol")
+  
+  
+ComplexHeatmap::Heatmap(data_for_aa_heatmap_wt, cluster_columns = F, show_row_dend = F, name = "Z-score", cluster_rows = F)
+
+
+# XBP1 Amino acid
+
+data_for_aa_heatmap_xbp1 <- genes_by_processes %>% 
+  dplyr::left_join(id_map)  %>%
+  dplyr::left_join(zscore_mats[[2]]) %>%
+  dplyr::filter(processes == "Amino Acid Biosynthesis") %>%
+  dplyr::select(-c(processes,gene_name)) %>%
+  as.data.frame() %>%
+  tibble::column_to_rownames("gene_symbol")
+
+
+ComplexHeatmap::Heatmap(data_for_aa_heatmap_xbp1, cluster_columns = F, show_row_dend = F, name = "Z-score", cluster_rows = F)
 
 
 
 ```
 
-### 
