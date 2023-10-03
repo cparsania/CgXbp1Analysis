@@ -125,49 +125,49 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(magrittr)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">"chip_analysis_functions.R"</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">"../R/chip_analysis_functions.R"</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(EnrichedHeatmap)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: package 'EnrichedHeatmap' was built under R version 4.2.3</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<section id="polii-profile-plot" class="level2">
-<h2 class="anchored" data-anchor-id="polii-profile-plot">PolII profile plot</h2>
-<div class="cell" data-hash="CgXBP1_analysis_sep_2023_cache/html/profile-hearmap-wt_4b016e3efca32166c9f6f4b8d03710dc">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>gff_file <span class="ot">&lt;-</span> <span class="st">"../../../../1_genome/CBS138_s02-m07-r06/annotation/C_glabrata_CBS138_version_s02-m07-r06_features.gff"</span></span>
+<section id="polii-profile-heatmap-wt" class="level2">
+<h2 class="anchored" data-anchor-id="polii-profile-heatmap-wt">PolII profile heatmap (WT)</h2>
+<div class="cell" data-hash="CgXBP1_analysis_sep_2023_cache/html/profile-hearmap-wt_5307444188de70fb172dd900520ffe38">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>gff_file <span class="ot">&lt;-</span> <span class="st">"../data/C_glabrata_CBS138_version_s02-m07-r06_features.gff"</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>gff <span class="ot">&lt;-</span> GenomicFeatures<span class="sc">::</span><span class="fu">makeTxDbFromGFF</span>(gff_file, <span class="at">metadata =</span> T)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>genes <span class="ot">&lt;-</span> GenomicFeatures<span class="sc">::</span><span class="fu">genes</span>(gff)</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="do">## prepare signal data</span></span>
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co">#bw_files_dir &lt;- c("../../../2_fastq_and_alignment/xbp1_deletion/180518_D00691_0103_BCCHBVANXX/")</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>bw_files_dir <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"../data/bw/WT"</span>)</span>
 <span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>bw_files_dir <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"../../../../2_fastq_and_alignment/WT/2_new_analysis/2_alignment/THP1/set1/"</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>bw_files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(bw_files_dir, <span class="at">pattern =</span> <span class="st">"*set1.*bw"</span>, <span class="at">recursive =</span> T, <span class="at">full.names =</span> T)</span>
 <span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co"># bw_files_dir &lt;- c("../../../2_fastq_and_alignment/WT/2_new_analysis/2_alignment/THP1/set2_normalised_bw/reseq/")</span></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>bw_files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(bw_files_dir, <span class="at">pattern =</span> <span class="st">"*set1.*bw"</span>, <span class="at">recursive =</span> T, <span class="at">full.names =</span> T)</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(bw_files) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"0.5h"</span>, <span class="st">"2h"</span>, <span class="st">"4h"</span>, <span class="st">"6h"</span>, <span class="st">"8h"</span>)</span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>bw_files <span class="ot">&lt;-</span> tibble<span class="sc">::</span><span class="fu">enframe</span>(bw_files)</span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="do">## generate normalised matrix in tidy way</span></span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>xx <span class="ot">&lt;-</span> bw_files <span class="sc">%&gt;%</span></span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">bw =</span> purrr<span class="sc">::</span><span class="fu">map</span>(value, <span class="cf">function</span>(ii) {</span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>                rtracklayer<span class="sc">::</span><span class="fu">import</span>(ii)</span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>        })) <span class="sc">%&gt;%</span></span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">norm_matrix =</span> purrr<span class="sc">::</span><span class="fu">map</span>(bw, <span class="cf">function</span>(ii) {</span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>                nn <span class="ot">&lt;-</span> EnrichedHeatmap<span class="sc">::</span><span class="fu">normalizeToMatrix</span>(<span class="at">signal =</span> ii, <span class="at">target =</span> genes, <span class="at">value_column =</span> <span class="st">"score"</span>, <span class="at">smooth =</span> T, <span class="at">extend =</span> <span class="dv">200</span>)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(bw_files) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"0.5h"</span>, <span class="st">"2h"</span>, <span class="st">"4h"</span>, <span class="st">"6h"</span>, <span class="st">"8h"</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>bw_files <span class="ot">&lt;-</span> tibble<span class="sc">::</span><span class="fu">enframe</span>(bw_files)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="do">## generate normalised matrix in tidy way</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>wt_norm_mat <span class="ot">&lt;-</span> bw_files <span class="sc">%&gt;%</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">bw =</span> purrr<span class="sc">::</span><span class="fu">map</span>(value, <span class="cf">function</span>(ii) {</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>                rtracklayer<span class="sc">::</span><span class="fu">import</span>(ii)</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>        })) <span class="sc">%&gt;%</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">norm_matrix =</span> purrr<span class="sc">::</span><span class="fu">map</span>(bw, <span class="cf">function</span>(ii) {</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>                nn <span class="ot">&lt;-</span> EnrichedHeatmap<span class="sc">::</span><span class="fu">normalizeToMatrix</span>(<span class="at">signal =</span> ii, </span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>                                                         <span class="at">target =</span> genes, </span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>                                                         <span class="at">value_column =</span> <span class="st">"score"</span>, </span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>                                                         <span class="at">smooth =</span> T, </span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>                                                         <span class="at">extend =</span> <span class="dv">200</span>)</span>
 <span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>                <span class="fu">return</span>(nn)</span>
 <span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>        }))</span>
 <span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="do">## plot hm list</span></span>
-<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>hh <span class="ot">&lt;-</span> <span class="fu">get_enrichment_heatmap_list</span>(</span>
-<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>        <span class="at">x =</span> xx<span class="sc">$</span>norm_matrix,</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>wt_profile_heatmap <span class="ot">&lt;-</span> <span class="fu">get_enrichment_heatmap_list</span>(</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>        <span class="at">x =</span> wt_norm_mat<span class="sc">$</span>norm_matrix,</span>
 <span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>        <span class="at">col =</span> circlize<span class="sc">::</span><span class="fu">colorRamp2</span>(<span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">50</span>, <span class="at">by =</span> <span class="dv">10</span>), <span class="at">colors =</span> <span class="fu">c</span>(<span class="st">"white"</span>, <span class="st">"#fdd49e"</span>, <span class="st">"#fdbb84"</span>, <span class="st">"#fc8d59"</span>, <span class="st">"#e34a33"</span>, <span class="st">"#b30000"</span>)),</span>
-<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>        <span class="at">names =</span> xx<span class="sc">$</span>name,</span>
-<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>        <span class="at">titles =</span> xx<span class="sc">$</span>name,</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>        <span class="at">names =</span> wt_norm_mat<span class="sc">$</span>name,</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>        <span class="at">titles =</span> wt_norm_mat<span class="sc">$</span>name,</span>
 <span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>        <span class="at">axis_name =</span> <span class="fu">c</span>(<span class="st">"-200"</span>, <span class="st">"TSS"</span>, <span class="st">"TES"</span>, <span class="st">"+200"</span>),</span>
 <span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>        <span class="at">axis_name_rot =</span> <span class="dv">90</span> ,</span>
 <span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>        <span class="at">axis_name_gp =</span> <span class="fu">gpar</span>(<span class="at">fontsize =</span> <span class="dv">10</span>, <span class="at">fontface =</span> <span class="st">"bold"</span>),</span>
@@ -175,49 +175,46 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>        <span class="at">top_annotation =</span> <span class="fu">HeatmapAnnotation</span>(<span class="at">lines =</span> <span class="fu">anno_enriched</span>(<span class="at">axis_param =</span> <span class="fu">list</span>(<span class="at">side =</span> <span class="st">"right"</span>, <span class="at">facing =</span> <span class="st">"inside"</span>)))</span>
 <span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>ComplexHeatmap<span class="sc">::</span><span class="fu">draw</span>(hh)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>ComplexHeatmap<span class="sc">::</span><span class="fu">draw</span>(wt_profile_heatmap)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <p><img src="CgXBP1_analysis_sep_2023_files/figure-html/profile-hearmap-wt-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 </section>
-<section id="heatmap-of-temporal-expression-patterns-of-transcribed-genes-in-c.-glabrata" class="level2">
-<h2 class="anchored" data-anchor-id="heatmap-of-temporal-expression-patterns-of-transcribed-genes-in-c.-glabrata">Heatmap of temporal expression patterns of transcribed genes in <em>C. glabrata</em></h2>
+<section id="heatmap-of-temporal-expression-patterns-of-transcribed-genes-in-wt" class="level2">
+<h2 class="anchored" data-anchor-id="heatmap-of-temporal-expression-patterns-of-transcribed-genes-in-wt">Heatmap of temporal expression patterns of transcribed genes in WT</h2>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># load FPKM matrix </span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="st">"cg_polII_wt_thp1_sample_wise_fpkm_mat.RData"</span>) <span class="do">## WT data</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>wt_fpkm_mat <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_rds</span>(<span class="at">file =</span> <span class="st">"../data/rds/cg_polII_wt_thp1_sample_wise_fpkm.rds"</span>)   </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>cg_wt_tidy <span class="ot">&lt;-</span> sample_wise_fpkm_mat_final</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(sample_wise_fpkm_mat_final)</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>cg_wt_tidy <span class="ot">&lt;-</span> cg_wt_tidy <span class="sc">%&gt;%</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">rename_if</span>(is.numeric, <span class="sc">~</span><span class="fu">gsub</span>(<span class="at">pattern =</span> <span class="st">"set_1"</span>, <span class="at">replacement =</span> <span class="st">"set1"</span>, <span class="at">x =</span> .)) <span class="sc">%&gt;%</span> <span class="do">## rename columns : set_1 to set1</span></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>        tidyr<span class="sc">::</span><span class="fu">gather</span>(<span class="st">"Cond"</span>, <span class="st">"FPKM"</span>, <span class="sc">-</span>geneName) <span class="sc">%&gt;%</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        tidyr<span class="sc">::</span><span class="fu">separate</span>(<span class="at">col =</span> <span class="st">"Cond"</span>, <span class="at">sep =</span> <span class="st">"_"</span>, <span class="at">into =</span> <span class="fu">c</span>(<span class="st">"organism"</span>, <span class="st">"strain"</span>, <span class="st">"condition"</span>, <span class="st">"timepoint"</span>, <span class="st">"moleculeType"</span>, <span class="st">"replicate"</span>))</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>wt_fpkm_mat <span class="ot">&lt;-</span> wt_fpkm_mat <span class="sc">%&gt;%</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        tidyr<span class="sc">::</span><span class="fu">gather</span>(<span class="st">"Cond"</span>, <span class="st">"FPKM"</span>, <span class="sc">-</span>gene_name) <span class="sc">%&gt;%</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        tidyr<span class="sc">::</span><span class="fu">separate</span>(<span class="at">col =</span> <span class="st">"Cond"</span>, <span class="at">sep =</span> <span class="st">"_"</span>, <span class="at">into =</span> <span class="fu">c</span>(<span class="st">"organism"</span>, <span class="st">"strain"</span>, <span class="st">"condition"</span>, <span class="st">"timepoint"</span>, <span class="st">"replicate"</span>))</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>xbp1_fpkm_mat <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_rds</span>(<span class="at">file =</span> <span class="st">"../data/rds/cg_polII_xbp1_thp1_sample_wise_fpkm.rds"</span>)</span>
 <span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="st">"cg_polII_xbp1_thp1_sample_wise_fpkm_mat.RData"</span>) <span class="do">## xbp1 del data</span></span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>cg_xbp1_tidy <span class="ot">&lt;-</span> sample_wise_fpkm_mat_final</span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>cg_xbp1_tidy <span class="ot">&lt;-</span> cg_xbp1_tidy <span class="sc">%&gt;%</span></span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>        tidyr<span class="sc">::</span><span class="fu">gather</span>(<span class="st">"Cond"</span>, <span class="st">"FPKM"</span>, <span class="sc">-</span>geneName) <span class="sc">%&gt;%</span></span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>        tidyr<span class="sc">::</span><span class="fu">separate</span>(<span class="at">col =</span> <span class="st">"Cond"</span>, <span class="at">sep =</span> <span class="st">"_"</span>, <span class="at">into =</span> <span class="fu">c</span>(<span class="st">"organism"</span>, <span class="st">"strain"</span>, <span class="st">"condition"</span>, <span class="st">"timepoint"</span>, <span class="st">"moleculeType"</span>, <span class="st">"replicate"</span>))</span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="do">## combine datasets</span></span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>cg_polII_data <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(cg_wt_tidy, cg_xbp1_tidy) <span class="sc">%&gt;%</span></span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">group_by</span>(geneName, strain, condition, replicate) <span class="sc">%&gt;%</span></span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">stdev =</span> <span class="fu">sd</span>(FPKM)) <span class="do">## calculate sd within group across all timepoints . Make sure that number of elem in each group must be equal to time points.</span></span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(cg_wt_tidy, cg_xbp1_tidy) <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">group_by</span>(geneName, strain, condition, replicate) <span class="sc">%&gt;%</span> </span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">tally</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">arrange</span>(<span class="fu">desc</span>(n))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>xbp1_fpkm_mat <span class="ot">&lt;-</span> xbp1_fpkm_mat <span class="sc">%&gt;%</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>        tidyr<span class="sc">::</span><span class="fu">gather</span>(<span class="st">"Cond"</span>, <span class="st">"FPKM"</span>, <span class="sc">-</span>gene_name) <span class="sc">%&gt;%</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>        tidyr<span class="sc">::</span><span class="fu">separate</span>(<span class="at">col =</span> <span class="st">"Cond"</span>, <span class="at">sep =</span> <span class="st">"_"</span>, <span class="at">into =</span> <span class="fu">c</span>(<span class="st">"organism"</span>, <span class="st">"strain"</span>, <span class="st">"condition"</span>, <span class="st">"timepoint"</span>, <span class="st">"replicate"</span>))</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="do">## combine datasets</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>cg_polII_data <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(wt_fpkm_mat, xbp1_fpkm_mat) <span class="sc">%&gt;%</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">group_by</span>(gene_name, strain, condition, replicate) <span class="sc">%&gt;%</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">stdev =</span> <span class="fu">sd</span>(FPKM)) <span class="do">## calculate sd within group across all timepoints . Make sure that number of elem in each group must be equal to time points.</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(wt_fpkm_mat, xbp1_fpkm_mat) <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">group_by</span>(gene_name, strain, condition, replicate) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">tally</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">arrange</span>(<span class="fu">desc</span>(n))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 15,933 × 5
-# Groups:   geneName, strain, condition [10,622]
-   geneName     strain condition replicate     n
+# Groups:   gene_name, strain, condition [10,622]
+   gene_name    strain condition replicate     n
    &lt;chr&gt;        &lt;chr&gt;  &lt;chr&gt;     &lt;chr&gt;     &lt;int&gt;
  1 CAGL0A00105g wt     thp1      set1          5
  2 CAGL0A00105g xbp1   thp1      set1          5
@@ -234,11 +231,10 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="do">## cross check the numbers (e.g number of unique genes, organism , strain, conditions etc.)</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>cg_polII_data <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">ungroup</span>() <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">summarise_all</span>(dplyr<span class="sc">::</span>n_distinct)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1 × 9
-  geneName organism strain condition timepoint moleculeType replicate  FPKM
-     &lt;int&gt;    &lt;int&gt;  &lt;int&gt;     &lt;int&gt;     &lt;int&gt;        &lt;int&gt;     &lt;int&gt; &lt;int&gt;
-1     5311        1      2         1         5            1         2 79575
-# ℹ 1 more variable: stdev &lt;int&gt;</code></pre>
+<pre><code># A tibble: 1 × 8
+  gene_name organism strain condition timepoint replicate  FPKM stdev
+      &lt;int&gt;    &lt;int&gt;  &lt;int&gt;     &lt;int&gt;     &lt;int&gt;     &lt;int&gt; &lt;int&gt; &lt;int&gt;
+1      5311        1      2         1         5         2 79575 15927</code></pre>
 </div>
 </div>
 </section>
@@ -251,7 +247,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>gp</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 210 rows containing non-finite values (`stat_bin()`).</code></pre>
+<pre><code>Warning: Removed 209 rows containing non-finite values (`stat_bin()`).</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: Removed 6 rows containing missing values (`geom_bar()`).</code></pre>
@@ -265,7 +261,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <h2 class="anchored" data-anchor-id="count-number-of-genes-at-several-standard-deviation-cutoffs-wt">Count number of genes at several standard deviation cutoffs (WT)</h2>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>gp <span class="ot">&lt;-</span> <span class="fu">counts_by_sd_cutoffs</span>(</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>        <span class="at">x =</span> cg_wt_tidy <span class="sc">%&gt;%</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>        <span class="at">x =</span> wt_fpkm_mat <span class="sc">%&gt;%</span></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>                tidyr<span class="sc">::</span><span class="fu">spread</span>(timepoint, FPKM) <span class="sc">%&gt;%</span></span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>                dplyr<span class="sc">::</span><span class="fu">filter</span>(replicate <span class="sc">==</span> <span class="st">"set1"</span>) <span class="sc">%&gt;%</span></span>
 <span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>                dplyr<span class="sc">::</span><span class="fu">select_if</span>(is.double),</span>
@@ -294,13 +290,13 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
 <span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">filter</span>(stdev <span class="sc">&gt;=</span> sd_cut_off, replicate <span class="sc">==</span> rep) <span class="sc">%&gt;%</span></span>
 <span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>        <span class="co">#dplyr::filter(strain == strain_type, stdev &gt;= sd_cut_off, replicate == rep) %&gt;%</span></span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">select</span>(geneName, strain, timepoint, FPKM) <span class="sc">%&gt;%</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">select</span>(gene_name, strain, timepoint, FPKM) <span class="sc">%&gt;%</span></span>
 <span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>        tidyr<span class="sc">::</span><span class="fu">unite</span>(<span class="at">col =</span> <span class="st">"ident"</span>, <span class="at">sep =</span> <span class="st">"_"</span>, strain, timepoint, <span class="at">remove =</span> F) <span class="sc">%&gt;%</span></span>
 <span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>timepoint) <span class="sc">%&gt;%</span></span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">group_by</span>(geneName)</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">group_by</span>(gene_name)</span>
 <span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>zscore_mats <span class="ot">&lt;-</span> fpkm_mat  <span class="sc">%&gt;%</span></span>
-<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">group_by</span>( strain, geneName) <span class="sc">%&gt;%</span> </span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">group_by</span>( strain, gene_name) <span class="sc">%&gt;%</span> </span>
 <span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">zscore =</span> <span class="fu">scale</span>(FPKM)) <span class="sc">%&gt;%</span> </span>
 <span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>FPKM) <span class="sc">%&gt;%</span> </span>
 <span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>        tidyr<span class="sc">::</span><span class="fu">spread</span>(<span class="at">key =</span> ident, <span class="at">value =</span> zscore) <span class="sc">%&gt;%</span></span>
@@ -312,7 +308,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a><span class="co"># plot WT heatmap</span></span>
 <span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>hm_data <span class="ot">&lt;-</span> zscore_mats[[<span class="dv">1</span>]] <span class="sc">%&gt;%</span></span>
 <span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>        <span class="fu">as.data.frame</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>        tibble<span class="sc">::</span><span class="fu">column_to_rownames</span>(<span class="st">"geneName"</span>)</span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>        tibble<span class="sc">::</span><span class="fu">column_to_rownames</span>(<span class="st">"gene_name"</span>)</span>
 <span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a>seed <span class="ot">&lt;-</span> <span class="dv">7173</span></span>
@@ -348,7 +344,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div class="cell">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>hm_data <span class="ot">&lt;-</span> zscore_mats[[<span class="dv">2</span>]] <span class="sc">%&gt;%</span></span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>        <span class="fu">as.data.frame</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>        tibble<span class="sc">::</span><span class="fu">column_to_rownames</span>(<span class="st">"geneName"</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>        tibble<span class="sc">::</span><span class="fu">column_to_rownames</span>(<span class="st">"gene_name"</span>)</span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>seed <span class="ot">&lt;-</span> <span class="dv">7173</span></span>
@@ -378,6 +374,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p><img src="CgXBP1_analysis_sep_2023_files/figure-html/zscore-xbp1-heatmap-1.png" class="img-fluid" width="384"></p>
 </div>
 </div>
+</section>
+<section id="section" class="level2">
+<h2 class="anchored" data-anchor-id="section"></h2>
+<section id="section-1" class="level3">
+<h3 class="anchored" data-anchor-id="section-1"></h3>
+</section>
 </section>
 
 </main>

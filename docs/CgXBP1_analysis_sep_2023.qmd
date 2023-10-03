@@ -7,27 +7,23 @@ editor: visual
 ```{r setup, message=FALSE}
 
 library(magrittr)
-source("chip_analysis_functions.R")
+source("../R/chip_analysis_functions.R")
 library(EnrichedHeatmap)
 library(ggplot2)
 ```
 
-## PolII profile plot
+## PolII profile heatmap (WT)
 
 ```{r profile-hearmap-wt, message=FALSE, warning=FALSE, cache=TRUE}
 
 
-gff_file <- "../../../../1_genome/CBS138_s02-m07-r06/annotation/C_glabrata_CBS138_version_s02-m07-r06_features.gff"
+gff_file <- "../data/C_glabrata_CBS138_version_s02-m07-r06_features.gff"
 gff <- GenomicFeatures::makeTxDbFromGFF(gff_file, metadata = T)
 genes <- GenomicFeatures::genes(gff)
 
 ## prepare signal data
 
-#bw_files_dir <- c("../../../2_fastq_and_alignment/xbp1_deletion/180518_D00691_0103_BCCHBVANXX/")
-
-bw_files_dir <- c("../../../../2_fastq_and_alignment/WT/2_new_analysis/2_alignment/THP1/set1/")
-
-# bw_files_dir <- c("../../../2_fastq_and_alignment/WT/2_new_analysis/2_alignment/THP1/set2_normalised_bw/reseq/")
+bw_files_dir <- c("../data/bw/WT")
 
 bw_files <- list.files(bw_files_dir, pattern = "*set1.*bw", recursive = T, full.names = T)
 
@@ -35,21 +31,25 @@ names(bw_files) <- c("0.5h", "2h", "4h", "6h", "8h")
 bw_files <- tibble::enframe(bw_files)
 
 ## generate normalised matrix in tidy way
-xx <- bw_files %>%
+wt_norm_mat <- bw_files %>%
         dplyr::mutate(bw = purrr::map(value, function(ii) {
                 rtracklayer::import(ii)
         })) %>%
         dplyr::mutate(norm_matrix = purrr::map(bw, function(ii) {
-                nn <- EnrichedHeatmap::normalizeToMatrix(signal = ii, target = genes, value_column = "score", smooth = T, extend = 200)
+                nn <- EnrichedHeatmap::normalizeToMatrix(signal = ii, 
+                                                         target = genes, 
+                                                         value_column = "score", 
+                                                         smooth = T, 
+                                                         extend = 200)
                 return(nn)
         }))
 
 ## plot hm list
-hh <- get_enrichment_heatmap_list(
-        x = xx$norm_matrix,
+wt_profile_heatmap <- get_enrichment_heatmap_list(
+        x = wt_norm_mat$norm_matrix,
         col = circlize::colorRamp2(breaks = seq(0, 50, by = 10), colors = c("white", "#fdd49e", "#fdbb84", "#fc8d59", "#e34a33", "#b30000")),
-        names = xx$name,
-        titles = xx$name,
+        names = wt_norm_mat$name,
+        titles = wt_norm_mat$name,
         axis_name = c("-200", "TSS", "TES", "+200"),
         axis_name_rot = 90 ,
         axis_name_gp = gpar(fontsize = 10, fontface = "bold"),
@@ -57,45 +57,42 @@ hh <- get_enrichment_heatmap_list(
         top_annotation = HeatmapAnnotation(lines = anno_enriched(axis_param = list(side = "right", facing = "inside")))
 )
 
-ComplexHeatmap::draw(hh)
+ComplexHeatmap::draw(wt_profile_heatmap)
 
 
 
 
 ```
 
-## Heatmap of temporal expression patterns of transcribed genes in *C. glabrata*
+## Heatmap of temporal expression patterns of transcribed genes in WT
 
 ```{r prepare-data}
 
 # load FPKM matrix 
+wt_fpkm_mat <- readr::read_rds(file = "../data/rds/cg_polII_wt_thp1_sample_wise_fpkm.rds")   
 
-load("cg_polII_wt_thp1_sample_wise_fpkm_mat.RData") ## WT data
 
-cg_wt_tidy <- sample_wise_fpkm_mat_final
-rm(sample_wise_fpkm_mat_final)
-
-cg_wt_tidy <- cg_wt_tidy %>%
-        dplyr::rename_if(is.numeric, ~gsub(pattern = "set_1", replacement = "set1", x = .)) %>% ## rename columns : set_1 to set1
-        tidyr::gather("Cond", "FPKM", -geneName) %>%
-        tidyr::separate(col = "Cond", sep = "_", into = c("organism", "strain", "condition", "timepoint", "moleculeType", "replicate"))
+wt_fpkm_mat <- wt_fpkm_mat %>%
+        tidyr::gather("Cond", "FPKM", -gene_name) %>%
+        tidyr::separate(col = "Cond", sep = "_", into = c("organism", "strain", "condition", "timepoint", "replicate"))
 
 
 
-load("cg_polII_xbp1_thp1_sample_wise_fpkm_mat.RData") ## xbp1 del data
 
-cg_xbp1_tidy <- sample_wise_fpkm_mat_final
-cg_xbp1_tidy <- cg_xbp1_tidy %>%
-        tidyr::gather("Cond", "FPKM", -geneName) %>%
-        tidyr::separate(col = "Cond", sep = "_", into = c("organism", "strain", "condition", "timepoint", "moleculeType", "replicate"))
+
+xbp1_fpkm_mat <- readr::read_rds(file = "../data/rds/cg_polII_xbp1_thp1_sample_wise_fpkm.rds")
+
+xbp1_fpkm_mat <- xbp1_fpkm_mat %>%
+        tidyr::gather("Cond", "FPKM", -gene_name) %>%
+        tidyr::separate(col = "Cond", sep = "_", into = c("organism", "strain", "condition", "timepoint", "replicate"))
 
 
 ## combine datasets
-cg_polII_data <- dplyr::bind_rows(cg_wt_tidy, cg_xbp1_tidy) %>%
-        dplyr::group_by(geneName, strain, condition, replicate) %>%
+cg_polII_data <- dplyr::bind_rows(wt_fpkm_mat, xbp1_fpkm_mat) %>%
+        dplyr::group_by(gene_name, strain, condition, replicate) %>%
         dplyr::mutate(stdev = sd(FPKM)) ## calculate sd within group across all timepoints . Make sure that number of elem in each group must be equal to time points.
 
-dplyr::bind_rows(cg_wt_tidy, cg_xbp1_tidy) %>% dplyr::group_by(geneName, strain, condition, replicate) %>% 
+dplyr::bind_rows(wt_fpkm_mat, xbp1_fpkm_mat) %>% dplyr::group_by(gene_name, strain, condition, replicate) %>% 
         dplyr::tally() %>% 
         dplyr::arrange(desc(n))
 
@@ -125,7 +122,7 @@ gp
 ```{r count-genes-by-sd-wt, fig.width=5, fig.height=5}
 
 gp <- counts_by_sd_cutoffs(
-        x = cg_wt_tidy %>%
+        x = wt_fpkm_mat %>%
                 tidyr::spread(timepoint, FPKM) %>%
                 dplyr::filter(replicate == "set1") %>%
                 dplyr::select_if(is.double),
@@ -152,13 +149,13 @@ fpkm_mat <- cg_polII_data %>%
         dplyr::ungroup() %>%
         dplyr::filter(stdev >= sd_cut_off, replicate == rep) %>%
         #dplyr::filter(strain == strain_type, stdev >= sd_cut_off, replicate == rep) %>%
-        dplyr::select(geneName, strain, timepoint, FPKM) %>%
+        dplyr::select(gene_name, strain, timepoint, FPKM) %>%
         tidyr::unite(col = "ident", sep = "_", strain, timepoint, remove = F) %>%
         dplyr::select(-timepoint) %>%
-        dplyr::group_by(geneName)
+        dplyr::group_by(gene_name)
 
 zscore_mats <- fpkm_mat  %>%
-        dplyr::group_by( strain, geneName) %>% 
+        dplyr::group_by( strain, gene_name) %>% 
         dplyr::mutate(zscore = scale(FPKM)) %>% 
         dplyr::select(-FPKM) %>% 
         tidyr::spread(key = ident, value = zscore) %>%
@@ -170,7 +167,7 @@ zscore_mats <- fpkm_mat  %>%
 # plot WT heatmap
 hm_data <- zscore_mats[[1]] %>%
         as.data.frame() %>% 
-        tibble::column_to_rownames("geneName")
+        tibble::column_to_rownames("gene_name")
 
 
 seed <- 7173
@@ -196,7 +193,7 @@ cg_wt_heatmap
 
 hm_data <- zscore_mats[[2]] %>%
         as.data.frame() %>% 
-        tibble::column_to_rownames("geneName")
+        tibble::column_to_rownames("gene_name")
 
 
 seed <- 7173
@@ -217,3 +214,13 @@ cg_xbp1_heatmap = ComplexHeatmap::Heatmap(hm_data, show_row_dend = F,
 cg_xbp1_heatmap
 
 ```
+
+## Corr between PolII replicates using FPKM values 
+
+```{r}
+
+
+
+```
+
+### 
