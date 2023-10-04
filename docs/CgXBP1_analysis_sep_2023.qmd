@@ -6,6 +6,8 @@ editor: visual
 
 ```{r setup, message=FALSE, warning=FALSE}
 
+
+knitr::opts_chunk$set(message=FALSE, warning=FALSE)
 library(magrittr)
 source("../R/chip_analysis_functions.R")
 library(EnrichedHeatmap)
@@ -189,7 +191,6 @@ rep <- "set1"
 fpkm_mat <- cg_polII_data %>%
         dplyr::ungroup() %>%
         dplyr::filter(stdev >= sd_cut_off, replicate == rep) %>%
-        #dplyr::filter(strain == strain_type, stdev >= sd_cut_off, replicate == rep) %>%
         dplyr::select(gene_name, strain, timepoint, FPKM) %>%
         tidyr::unite(col = "ident", sep = "_", strain, timepoint, remove = F) %>%
         dplyr::select(-timepoint) %>%
@@ -279,12 +280,50 @@ cg_tf_heatmap = ComplexHeatmap::Heatmap(tf_hm_data[,-1], show_row_dend = F,
                         column_title = "Temporally Expressed Transcription Factors",
                         cluster_row_slices = F)
 
-ComplexHeatmap::draw(cg_tf_heatmap)
+cg_tf_heatmap
 ```
 
-## Prepare data for pathway specific heatmap
+## Pathway specific heatmap 
 
-```{r}
+### Prepare data
+
+```{r, fig.width=5, fig.height=6, warning=FALSE, message=FALSE}
+
+excel_sheets = c("DNA_repair","iron_homeostasis","oxidative_stress","gluconeogenesis"
+              ,"DNA_D_cc_arrest_in_resp_N_starv","TCA_cycle","autophagy","Aminoacid_biosynthesis")
+
+gene_sets <- purrr::map(excel_sheets, ~readxl::read_excel("../data/pathway_genes.xlsx", sheet = ..1) %>% dplyr::select(gene_name, gene_symbol, cluster))
+names(gene_sets) <- excel_sheets
+
+# prepare data
+
+pathway_genes_hm_data <- purrr::map(gene_sets, ~ ..1 %>% 
+  dplyr::left_join(cg_polII_data %>% dplyr::ungroup() %>% dplyr::filter(strain == "wt"& replicate == "set1"), by = "gene_name") %>% 
+  dplyr::group_by( strain, gene_name) %>% 
+  dplyr::mutate(zscore = scale(FPKM)) %>% 
+  dplyr::select(-FPKM) %>% 
+  dplyr::ungroup() %>%
+  tidyr::pivot_wider(names_from = "timepoint", values_from  = "zscore") %>%
+  dplyr::distinct() %>%
+dplyr::select(c(gene_symbol, cluster, dplyr::ends_with("h"))) %>% as.data.frame() %>% 
+  tibble::column_to_rownames(var = "gene_symbol") 
+)
+
+# plot heatmap
+pathway_heatmaps <- purrr::map(names(pathway_genes_hm_data) ,~ ComplexHeatmap::Heatmap(matrix = pathway_genes_hm_data[[..1]][,-1], row_split = pathway_genes_hm_data[[..1]]$cluster, cluster_row_slices = F, cluster_columns = F, show_row_dend = F, column_title = ..1, name = "Z-Score")
+)
+
+# plot 
+
+purrr::walk(pathway_heatmaps, ~ComplexHeatmap::draw(..1))
+
+```
+
+## <!--# Prepare data for pathway specific heatmap -->
+
+<!--#  -->
+
+```{r include=FALSE, eval=FALSE, echo=FALSE}
 
 genes_by_processes <- tibble::tribble(
                                       ~gene_name,                ~processes,
@@ -349,9 +388,11 @@ id_map <- tibble::tribble(
 
 ```
 
-## Pathway specific heatmap: WT - TCA cycle
+## <!--# Pathway specific heatmap: WT - TCA cycle -->
 
-```{r fig.width=4, fig.height=5 }
+<!--#  -->
+
+```{r fig.width=4, fig.height=5 , include=FALSE, eval=FALSE, echo=FALSE}
 
 data_for_tca_heatmap_wt <- genes_by_processes %>% 
   dplyr::left_join(id_map)  %>%
@@ -367,9 +408,11 @@ ComplexHeatmap::Heatmap(data_for_tca_heatmap_wt, cluster_columns = F, show_row_d
 
 ```
 
-## Pathway specific heatmap: xbp1 - TCA cycle
+## <!--# Pathway specific heatmap: xbp1 - TCA cycle -->
 
-```{r fig.width=4, fig.height=5 }
+<!--#  -->
+
+```{r fig.width=4, fig.height=5 , include=FALSE, eval=FALSE, echo=FALSE}
 
 data_for_tca_heatmap_xbp1 <- genes_by_processes %>% 
   dplyr::left_join(id_map)  %>%
@@ -386,9 +429,11 @@ ComplexHeatmap::Heatmap(data_for_tca_heatmap_xbp1, cluster_columns = F, show_row
 
 ```
 
-## Pathway specific heatmap: WT - Amino acid biosynthesis
+## <!--# Pathway specific heatmap: WT - Amino acid biosynthesis -->
 
-```{r fig.width=4, fig.height=5 }
+<!--#  -->
+
+```{r fig.width=4, fig.height=5 , include=FALSE, eval=FALSE, echo=FALSE}
 
 data_for_aa_heatmap_wt <- genes_by_processes %>% 
   dplyr::left_join(id_map)  %>%
@@ -404,9 +449,11 @@ ComplexHeatmap::Heatmap(data_for_aa_heatmap_wt, cluster_columns = F, show_row_de
 
 ```
 
-## Pathway specific heatmap: xbp1 - Amino acid biosynthesis
+## <!--# Pathway specific heatmap: xbp1 - Amino acid biosynthesis -->
 
-```{r fig.width=4, fig.height=5 }
+<!--#  -->
+
+```{r fig.width=4, fig.height=5 , include=FALSE, eval=FALSE, echo=FALSE}
 
 data_for_aa_heatmap_xbp1 <- genes_by_processes %>% 
   dplyr::left_join(id_map)  %>%
