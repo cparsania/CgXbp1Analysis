@@ -4,7 +4,7 @@ format: html
 editor: visual
 ---
 
-```{r setup, message=FALSE}
+```{r setup, message=FALSE, warning=FALSE}
 
 library(magrittr)
 source("../R/chip_analysis_functions.R")
@@ -13,7 +13,13 @@ library(ggplot2)
 library(patchwork)
 ```
 
-## PolII profile heatmap (WT)
+# PolII ChIP-seq analysis
+
+## Generate normalised gene expression values (Commonly known as FPKM, RPKM, TPM, etc. ) for PolII data.
+
+To generate the normalised expression values for each gene aligned reads were processed by `MACS2` (Zhang et al., 2008), and `BigWig` files were generated using `bedSort` and `bedGraphToBigWig` commands from `UCSC Kent utils` (Kent et al., 2010). `Samtools` (version 1.9) was used to index the resultant `BAM` file and check for alignment statistics. Elongating RNAPII occupancy was then measured by `normalizeToMatrix` function from the R package `EnrichedHeatmap`. Normalized values then saved to .rds files (see R script `generate_normalised_gene_expression_matrix_from_polII_chip_data.R`) which are then used for downstream analysis and visualizations.
+
+## PolII occupancy heatmap (WT)
 
 ```{r profile-hearmap-wt, message=FALSE, warning=FALSE, cache=TRUE}
 
@@ -61,11 +67,9 @@ wt_profile_heatmap <- get_enrichment_heatmap_list(
 ComplexHeatmap::draw(wt_profile_heatmap)
 
 
-
-
 ```
 
-## Heatmap of temporal expression patterns of transcribed genes in WT
+## Prepare data for normalised gene expression heatmap
 
 ```{r prepare-data}
 
@@ -76,9 +80,6 @@ wt_fpkm_mat <- readr::read_rds(file = "../data/rds/cg_polII_wt_thp1_sample_wise_
 wt_fpkm_mat <- wt_fpkm_mat %>%
         tidyr::gather("Cond", "FPKM", -gene_name) %>%
         tidyr::separate(col = "Cond", sep = "_", into = c("organism", "strain", "condition", "timepoint", "replicate"))
-
-
-
 
 
 xbp1_fpkm_mat <- readr::read_rds(file = "../data/rds/cg_polII_xbp1_thp1_sample_wise_fpkm.rds")
@@ -104,11 +105,10 @@ cg_polII_data %>% dplyr::ungroup() %>% dplyr::summarise_all(dplyr::n_distinct)
 
 ```
 
-## Corr between PolII replicates using FPKM values
+## Correlation of PolII replicates using FPKM values (WT)
 
-```{r, fig.width=8, fig.height=12}
+```{r, fig.width=8, fig.height=6}
 
-# WT
 
 wt_data_for_corr <- cg_polII_data %>% dplyr::filter(strain == "wt") %>% 
   tidyr::pivot_wider(id_cols  = c(gene_name, timepoint), 
@@ -122,12 +122,13 @@ plot_wt_cor <- wt_data_for_corr %>%
   ggtitle("WT") + 
   scale_y_continuous(breaks = c(0,5,10)) + scale_x_continuous(breaks = c(0,5,10), limits = c(0,10))
 
+plot_wt_cor
+```
 
+## Correlation of PolII replicates using FPKM values (xbp1)
 
+```{r, fig.width=8, fig.height=6}
   
-
-
-# xbp1
 xbp1_data_for_corr <- cg_polII_data %>% dplyr::filter(strain == "xbp1") %>% 
   tidyr::pivot_wider(id_cols  = c(gene_name, timepoint), 
                      names_from = replicate, 
@@ -140,29 +141,26 @@ plot_xbp1_cor <- xbp1_data_for_corr %>%
   scale_y_continuous(breaks = c(0,5,10)) + scale_x_continuous(breaks = c(0,5,10), limits = c(0,10))
 
 
-
-plot_wt_cor / plot_xbp1_cor
-
-  
+plot_xbp1_cor
 ```
 
-## plot SD distributions for strain types for each replicates.
+## Plot SD distributions for each replicate
 
 ```{r sd-histograms}
 
 
-gp <- cg_polII_data %>%
+sd_disturb_plot <- cg_polII_data %>%
         dplyr::slice(1L) %>% ## get one elem of each group
         ggplot() + geom_histogram(aes(x = stdev), binwidth = 1, fill = "cyan3", col = "black") + xlim(-1, 50) + facet_wrap(replicate ~ strain) + theme_bw()
 
-gp
+sd_disturb_plot
 
 
 ```
 
-## Count number of genes at several standard deviation cutoffs (WT)
+## Count number of genes at several SD cutoffs (WT)
 
-```{r count-genes-by-sd-wt, fig.width=5, fig.height=5}
+```{r count-genes-by-sd-wt, fig.width=4, fig.height=4}
 
 gp <- counts_by_sd_cutoffs(
         x = wt_fpkm_mat %>%
@@ -176,9 +174,9 @@ gp <- counts_by_sd_cutoffs(
 gp + theme_bw()
 ```
 
-## Wild Type Z-score heatmap plot
+## PolII gene expression heatmap (WT)
 
-```{r zscore-wt-heatmap, fig.width=4, fig.height=8}
+```{r zscore-wt-heatmap, fig.width=3, fig.height=8}
 
 ## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ####  zscore heatmap plot
@@ -215,24 +213,25 @@ hm_data <- zscore_mats[[1]] %>%
 
 seed <- 7173
 set.seed(seed)
-km <- kmeans(hm_data, centers = 8)
-table(km$cluster)
-cl_order <- factor(km$cluster, levels = c(3,2,1,6,4,7,8,5)) %>% 
+wt_km <- kmeans(hm_data, centers = 8)
+table(wt_km$cluster)
+wt_cl_order <- factor(wt_km$cluster, levels = c(3,2,1,6,4,7,8,5)) %>% 
         forcats::fct_relabel(~paste("clust",1:8, sep = "-"))
 
 cg_wt_heatmap = ComplexHeatmap::Heatmap(hm_data, show_row_dend = F, 
                         show_row_names = F, 
                         cluster_columns = F, 
                         show_column_dend = F, 
-                        row_split = cl_order, 
+                        row_split = wt_cl_order, 
                         name = "Z-Score",
                         cluster_row_slices = F)
-cg_wt_heatmap
+cg_wt_heatmap <- ComplexHeatmap::draw(cg_wt_heatmap)
+
 ```
 
-## Xbp1∆ Z-score heatmap plot
+## PolII gene expression heatmap (xbp1)
 
-```{r zscore-xbp1-heatmap, fig.height=6, fig.width=4}
+```{r zscore-xbp1-heatmap, fig.height=6, fig.width=3}
 
 hm_data <- zscore_mats[[2]] %>%
         as.data.frame() %>% 
@@ -258,7 +257,32 @@ cg_xbp1_heatmap
 
 ```
 
-## Pathway specific heatmap
+## Plot transcription factor (WT) Temporally 
+
+```{r, fig.width=4, fig.height=10}
+cg_tf <- readr::read_lines("../data/Cg_polII_wt_temporal_TFs.txt")
+
+tf_hm_data <- wt_cl_order[names(wt_cl_order) %in% cg_tf] %>% 
+  tibble::enframe(name = "gene_name", value = "clust") %>% dplyr::left_join(zscore_mats[[1]] , by = "gene_name") %>% 
+        as.data.frame() %>% 
+        tibble::column_to_rownames("gene_name") 
+
+
+cg_tf_heatmap = ComplexHeatmap::Heatmap(tf_hm_data[,-1], show_row_dend = F, 
+                        show_row_names = T, 
+                        row_names_gp = gpar(cex = 0.7),
+                        cluster_columns = F, 
+                        show_column_dend = F,
+                        column_title_gp = gpar(cex = 0.8),
+                        row_split = tf_hm_data$clust, 
+                        name = "Z-Score",
+                        column_title = "Temporally Expressed Transcription Factors",
+                        cluster_row_slices = F)
+
+ComplexHeatmap::draw(cg_tf_heatmap)
+```
+
+## Prepare data for pathway specific heatmap
 
 ```{r}
 
@@ -322,7 +346,13 @@ id_map <- tibble::tribble(
                   "CAGL0M08910g",   "CgSNF1"
                   )
 
-# WT TCA cycle 
+
+```
+
+## Pathway specific heatmap: WT - TCA cycle
+
+```{r fig.width=4, fig.height=5 }
+
 data_for_tca_heatmap_wt <- genes_by_processes %>% 
   dplyr::left_join(id_map)  %>%
   dplyr::left_join(zscore_mats[[1]]) %>%
@@ -332,10 +362,14 @@ data_for_tca_heatmap_wt <- genes_by_processes %>%
   tibble::column_to_rownames("gene_symbol")
   
   
-ComplexHeatmap::Heatmap(data_for_tca_heatmap_wt, cluster_columns = F, show_row_dend = F, name = "Z-score", cluster_rows = F)
+ComplexHeatmap::Heatmap(data_for_tca_heatmap_wt, cluster_columns = F, show_row_dend = F, name = "Z-score", cluster_rows = F, column_title = "TCA Cycle")
 
 
-# XBP1 TCA cycle 
+```
+
+## Pathway specific heatmap: xbp1 - TCA cycle
+
+```{r fig.width=4, fig.height=5 }
 
 data_for_tca_heatmap_xbp1 <- genes_by_processes %>% 
   dplyr::left_join(id_map)  %>%
@@ -346,12 +380,16 @@ data_for_tca_heatmap_xbp1 <- genes_by_processes %>%
   tibble::column_to_rownames("gene_symbol")
 
 
-ComplexHeatmap::Heatmap(data_for_tca_heatmap_xbp1, cluster_columns = F, show_row_dend = F, name = "Z-score", cluster_rows = F)
+ComplexHeatmap::Heatmap(data_for_tca_heatmap_xbp1, cluster_columns = F, show_row_dend = F, name = "Z-score", cluster_rows = F, column_title = "TCA Cycle")
 
 
 
+```
 
-# WT Amino acid  
+## Pathway specific heatmap: WT - Amino acid biosynthesis
+
+```{r fig.width=4, fig.height=5 }
+
 data_for_aa_heatmap_wt <- genes_by_processes %>% 
   dplyr::left_join(id_map)  %>%
   dplyr::left_join(zscore_mats[[1]]) %>%
@@ -361,10 +399,14 @@ data_for_aa_heatmap_wt <- genes_by_processes %>%
   tibble::column_to_rownames("gene_symbol")
   
   
-ComplexHeatmap::Heatmap(data_for_aa_heatmap_wt, cluster_columns = F, show_row_dend = F, name = "Z-score", cluster_rows = F)
+ComplexHeatmap::Heatmap(data_for_aa_heatmap_wt, cluster_columns = F, show_row_dend = F, name = "Z-score", cluster_rows = F, column_title = "Amino acid biosynthesis")
 
 
-# XBP1 Amino acid
+```
+
+## Pathway specific heatmap: xbp1 - Amino acid biosynthesis
+
+```{r fig.width=4, fig.height=5 }
 
 data_for_aa_heatmap_xbp1 <- genes_by_processes %>% 
   dplyr::left_join(id_map)  %>%
@@ -375,9 +417,7 @@ data_for_aa_heatmap_xbp1 <- genes_by_processes %>%
   tibble::column_to_rownames("gene_symbol")
 
 
-ComplexHeatmap::Heatmap(data_for_aa_heatmap_xbp1, cluster_columns = F, show_row_dend = F, name = "Z-score", cluster_rows = F)
-
+ComplexHeatmap::Heatmap(data_for_aa_heatmap_xbp1, cluster_columns = F, show_row_dend = F, name = "Z-score", cluster_rows = F, column_title = "Amino acid biosynthesis")
 
 
 ```
-
